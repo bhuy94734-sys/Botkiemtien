@@ -1,9 +1,10 @@
 import logging
 import threading
+import os
 from flask import Flask
 from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import (
-    ApplicationBuilder,
+    Application,
     CommandHandler,
     ContextTypes,
     MessageHandler,
@@ -20,7 +21,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# --- TẠO WEB SERVER ĐỂ RENDER VÀ UPTIMEROBOT PING ---
+# --- WEB SERVER CHO RENDER & UPTIMEROBOT ---
 web_app = Flask(__name__)
 
 @web_app.route('/')
@@ -28,12 +29,10 @@ def home():
     return "Bot Tai Xiu is running 24/7!"
 
 def run_web():
-    # Render tự cấp biến môi trường PORT, mặc định chạy cổng 10000 nếu test local
-    import os
     port = int(os.environ.get("PORT", 10000))
     web_app.run(host="0.0.0.0", port=port)
 
-# --- BÀN PHÍM VÀ LOGIC BOT (Giữ nguyên như cũ) ---
+# --- BÀN PHÍM ---
 def get_main_menu_keyboard(user_id):
     keyboard = [
         ["🕹️ Danh sách game", "🪪 Tài Khoản"],
@@ -63,6 +62,7 @@ def get_game_menu_keyboard():
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
+# --- SỰ KIỆN BOT ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     db.get_user(user.id, user.username or user.first_name)
@@ -167,23 +167,24 @@ async def cmd_thongbao(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("✅ Đã gửi thông báo xong!")
 
 def main():
-    # Khởi chạy Web Server Flask bằng luồng riêng (Thread) để không chặn Bot Telegram
+    # Chạy Flask ở luồng riêng
     t = threading.Thread(target=run_web)
     t.daemon = True
     t.start()
 
-    # Khởi chạy Bot Telegram
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.add_handler(CommandHandler("cong", cmd_cong))
-    app.add_handler(CommandHandler("tru", cmd_tru))
-    app.add_handler(CommandHandler("taocode", cmd_taocode))
-    app.add_handler(CommandHandler("code", cmd_code))
-    app.add_handler(CommandHandler("tb", cmd_thongbao))
+    # Khởi tạo Application chuẩn cho python-telegram-bot mới nhất
+    application = Application.builder().token(TOKEN).build()
 
-    print("🤖 Bot và Web Server đang chạy...")
-    app.run_polling()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.add_handler(CommandHandler("cong", cmd_cong))
+    application.add_handler(CommandHandler("tru", cmd_tru))
+    application.add_handler(CommandHandler("taocode", cmd_taocode))
+    application.add_handler(CommandHandler("code", cmd_code))
+    application.add_handler(CommandHandler("tb", cmd_thongbao))
+
+    print("🤖 Bot và Web Server đang chạy ổn định...")
+    application.run_polling()
 
 if __name__ == "__main__":
     main()
