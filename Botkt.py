@@ -68,7 +68,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db.get_user(user.id, user.username or user.first_name)
     welcome_text = (
         f"✅ **ID của bạn là `{user.id}`**\n\n"
-        f"🏛️ Tham gia Room TX để săn hũ và nhận giftcode hằng ngày https://t.me/chiaselanhmanh\n\n"
+        f"🏛️ Tham gia Room TX để săn hũ và nhận giftcode hằng ngày https://t.me/kiemtienchiase88\n\n"
         f"💙 Tham gia kênh thông báo để nhận code hàng ngày 💙"
     )
     await update.message.reply_text(welcome_text, reply_markup=get_main_menu_keyboard(user.id), parse_mode="Markdown")
